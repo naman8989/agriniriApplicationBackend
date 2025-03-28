@@ -1,25 +1,32 @@
-const express = require('express');
-const { Pages, tryCatchMiddle } = require('./pageIndex');
-const bodyParser = require('body-parser');
-const cors = require("cors");
+import express from 'express';
+import { Pages, tryCatchMiddle } from './pageIndex.cjs';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import multer from 'multer';
 
 const app = express();
 const port = 3000;
+const address = "0.0.0.0";
+const upload = multer();
 
 // Middleware to handle request and response
 app.use(express.json()); // To handle JSON payloads in POST requests
-app.use(express.text()); // To handle JSON payloads in POST requests
+// app.use(express.text()); // To handle JSON payloads in POST requests
+// app.use(express.raw()); // To handle JSON payloads in POST requests
 app.use(express.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded());
+// app.use(upload.none());
+// app.use(bodyParser.json());
+
+
+// app.use(express.urlencoded({ extended: true }));
+// app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded());
 // app.use(cookieParser());
 app.use(cors("*"))
 app.use((req,res,next)=>{
   console.log(req.url)
   next()
 })
-
-global.dbName = "appDetails"
 
 // app.get("/",(req,res)=>{
 //   res.statusCode = 200
@@ -43,6 +50,8 @@ app.all('*', (req, res) => {
     console.log(req.url);
     res.setHeader('Content-Type', 'application/json');
 
+    console.log(req.url)
+
     // Try-catch middleware
     tryCatchMiddle(req, res, Pages);
   } catch (e) {
@@ -52,8 +61,8 @@ app.all('*', (req, res) => {
 });
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server running at http://0.0.0.0:${port}/`);
+app.listen(port, address, () => {
+  console.log(`Server running at http://${address}:${port}/`);
 });
 
 

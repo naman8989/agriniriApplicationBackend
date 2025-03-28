@@ -1,0 +1,13 @@
+fetch('http://127.0.0.1:3000/profile/faq', {
+    method: "POST", // Correct way to set method
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify(      {
+       "question": "What is Agriniri?",
+       "answer": "Agriniri is a platform for farmers to get information about agriculture and farming."
+     } )
+})
+.then(response => response.text())
+.then(data => console.log(data))
+.catch(error => console.error("Error:", error));
