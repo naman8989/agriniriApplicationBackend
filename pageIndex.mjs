@@ -1,16 +1,18 @@
-const { parse } = require('path');
-const url = require('url');
-// const { loginUser, createUser } = require("./applicationFiles/onboarding/loginSignin");
-// const { getShopDetails } = require("./applicationFiles/gatherDetails/shopDetails")
+import {parse} from "path"
+import url from 'url'
 
-const faqPage = require("./applicationFiles/faqDetails/extract_add_Details.cjs")
+import {loginUser, createUser} from "./applicationFiles/onboarding/loginSignin.mjs"
+import { getShopDetails } from "./applicationFiles/gatherDetails/shopDetails.mjs"
 
-const addressInformation = require("./applicationFiles/gatherDetails/addressInformation.cjs")
+import jwt  from "jsonwebtoken"
+// const faqPage = require("./applicationFiles/faqDetails/extract_add_Details.cjs")
+
+// const addressInformation = require("./applicationFiles/gatherDetails/addressInformation.cjs")
 
 // import { Pages } from './pageIndex.mjs';
 
 
-function tryCatchMiddle(req, res, next) {
+export function tryCatchMiddle(req, res, next) {
     try {
         next(req, res)
     } catch (e) {
@@ -30,8 +32,8 @@ function checkPost(req,res,jsonData,next){
     next(req, res, jsonData)
 }
 
-function Pages(req, res) {
-    parseUrl = url.parse(req.url, true)
+let decode = undefined
+export function Pages(req, res) {
     switch (req.url) {
         case "/":
             if (req.method != 'GET') {
@@ -42,37 +44,113 @@ function Pages(req, res) {
             res.statusCode = 200
             res.json({ 'response': 'This is agriniri backend server' });
             break;
+
+        case "/jwt-re-token":
+            if (req.method != 'POST') {
+                res.statusCode = 404
+                res.json({ 'response': 'Use POST method' });
+                break;
+            }
+            res.statusCode == 200
+            if (req.body.temId == undefined){
+                res.json({'response':"User temperary Id not present"})
+                break
+            }
+            res.json({'response':"JWT REFRESH TOKEN",'token': jwt.sign({temId:req.body.temId},global.jwtReToken,{expiresIn:global.jwtReTokenExp})})
+            break
+
         case "/login":
             if (req.method != 'POST') {
                 res.statusCode = 404
                 res.json({ 'response': 'Use POST method' });
                 break
             }
-            console.log("in here")
-            console.log(req.body)
-            res.end("ok")
-            // loginUser(req, res, parse.email, parse.password);
+            if (req.body.reToken == undefined){
+                res.statusCode = 401
+                res.json({ 'response': 'Refresh token not found' });
+                break
+            }
+            try{
+                decode = jwt.verify(req.body.reToken,global.jwtReToken)
+            }catch(err){
+                res.statusCode = 503
+                res.json({ 'response': 'Refresh token expired' });
+                break
+            }
+            // console.log("decode ",decode)
+            // console.log(req.body)
+            if(req.body.email == undefined || req.body.password == undefined){
+                res.statusCode = 403
+                res.json({ 'response': 'Email or Password not found' });
+                break
+            }
+            // console.log(req.body)
+            loginUser(req, res, req.body.email, req.body.password);
+            // res.end("ok")
             break;
+
         case "/signup":
             if (req.method != 'POST') {
                 res.statusCode = 404
                 res.json({ 'response': 'Use POST method' });
                 break
             }
-            console.log(req.body)
-            res.end()
-            // createUser(req, res, padrse.name, parse.email, parse.password);
+            if (req.body.reToken == undefined){
+                res.statusCode = 401
+                res.json({ 'response': 'Refresh token not found' });
+                break
+            }
+            try{
+                decode = jwt.verify(req.body.reToken,global.jwtReToken)
+            }catch(err){
+                res.statusCode = 503
+                res.json({ 'response': 'Refresh token expired' });
+                break
+            }
+            // console.log("decode ",decode)
+            
+            // console.log(req.body)
+            if(req.body.email == undefined || req.body.password == undefined){
+                res.statusCode = 403
+                res.json({ 'response': 'Email or Password not found' });
+                break
+            }
+            createUser(req, res, req.body.name, req.body.email, req.body.password);
+            // res.end("ok")
             break;
+        
+        case "/occupation":
+            if(req.method != 'POST'){
+                res.statusCode = 404
+                res.json({ 'response': 'Use POST method' });
+                break   
+            }
+            // if (req.body.reToken == undefined){
+            //     res.statusCode = 401
+            //     res.json({ 'response': 'Refresh token not found' });
+            //     break
+            // }
+            if(req.body.uniqueId == undefined || req.body.read == undefined || req.body.update == undefined){
+                res.statusCode = 401
+                res.json({"response":"uniqueId, read, update one of them is missing"})
+                break
+            }
+            crudOccupation(req,res,req.body.uniqueId,req.body.read,req.body.update)
+
         case "/shopDetails":
             if (req.method != 'POST') {
                 res.statusCode = 404
                 res.json({ 'response': 'Use POST method' });
                 break
             }
-            console.log(req.body)
-            res.end()
-            // getShopDetails(req, res, parse.shopData)
+            // console.log(req.body)
+            // res.end()
+            getShopDetails(req, res, parse.shopData)
             break;
+
+        case "/farmerDetails":
+            
+
         case "/profile/userInfo":
             if (req.method != 'POST') {
                 res.statusCode = 404
@@ -167,10 +245,10 @@ function Pages(req, res) {
         case "/search":
             break;
         default:
-            res.end();
+            res.end("This is default response");
     }
 }
 
 
 
-module.exports = { Pages, tryCatchMiddle }
+// export = { Pages, tryCatchMiddle }

@@ -1,5 +1,5 @@
 import express from 'express';
-import { Pages, tryCatchMiddle } from './pageIndex.cjs';
+import { Pages, tryCatchMiddle } from './pageIndex.mjs';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import multer from 'multer';
@@ -47,10 +47,9 @@ app.use((req,res,next)=>{
 // Example route to handle all requests
 app.all('*', (req, res) => {
   try {
-    console.log(req.url);
+    // console.log(req.url);
     res.setHeader('Content-Type', 'application/json');
 
-    console.log(req.url)
 
     // Try-catch middleware
     tryCatchMiddle(req, res, Pages);

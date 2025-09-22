@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "desktop-commander": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@wonderwhy-er/desktop-commander"
+      ]
+    },
+    "filesystem": {
+      "command": "mcp-filesystem-server",
+      "args": ["C:\\Users\\Naman\\Desktop\\work\\work\\agriniriapp\\agrinriBackend"]
+    }
+  }
+}

@@ -1,10 +1,14 @@
-const { query } = require('express');
-const {databaseName,environementName} = require("../global.cjs");
+// const { query } = require('express');
+import {query} from 'express'
+import  {databaseName,environementName} from "../global.cjs"
 
-const sqlite3 = require('sqlite3').verbose();
+// const sqlite3 = require('sqlite3').verbose();
+import sqlite from "sqlite3"
+import { resolve } from 'path';
+const sqlite3 = sqlite.verbose()  
 
 
-class dbInstance {
+export default class dbInstance {
     constructor(tableName) {
         this.dbName = global.dbName;
         this.tableName = tableName
@@ -85,24 +89,28 @@ class dbInstance {
     
         // Condition should be [column, value]
         const query = `UPDATE ${this.tableName} SET ${setQuery} WHERE ${condition[0]} = ?`;
-    
-        this.db.serialize(() => {
-            // Prepare the SQL statement
-            const stmt = this.db.prepare(query);
-    
-            // Extract values for the placeholders
-            const values = [...settings.map(([_, val]) => val), condition[1]];
-    
-            // Run the query with values
-            stmt.run(values, function (err) {
-                if (err) {
-                    console.error('Error updating data:', err);
-                } else {
-                    console.log('Data updated successfully');
-                }
-                stmt.finalize();
+        
+        return new Promise((resolve,rejects)=>{
+
+            this.db.serialize(() => {
+                // Prepare the SQL statement
+                const stmt = this.db.prepare(query);
+        
+                // Extract values for the placeholders
+                const values = [...settings.map(([_, val]) => val), condition[1]];
+        
+                // Run the query with values
+                stmt.run(values, function (err) {
+                    if (err) {
+                        console.error('Error updating data:', err);
+                    } else {
+                        console.log('Data updated successfully');
+                    }
+                    stmt.finalize();
+                });
             });
-        });
+        })
+        
     }
     
 
@@ -125,15 +133,18 @@ class dbInstance {
     // Function to search for a value in a column
     findInColumn(column, value) {
         const query = `SELECT * FROM ${this.tableName} WHERE ${column} = ?`;
-  
-        this.db.all(query, [value], (err, rows) => {
-          if (err) {
-            console.error('Error executing query:', err);
-            return [err, null];
-          } else {
-            return [null, rows];
-          }
-        });
+        
+        return new Promise( (resolve,reject)=>{
+            this.db.all(query, [value], (err, rows) => {
+                // console.log(query, value,err,rows)
+              if (err) {
+                console.error('Error executing query:', err);
+                reject ([err, null]);
+              } else {
+                resolve ([null, rows]);
+              }
+            });
+        } )
   }
 
   // Function to close the database connection
@@ -148,4 +159,4 @@ class dbInstance {
   }
 }
 
-module.exports = dbInstance;
+// module.exports = dbInstance;
