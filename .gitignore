@@ -1,2 +1,3 @@
 node_modules
-
+applicationFiles\database\mongoData
+applicationFiles\database\appDetails.db
