@@ -11,6 +11,7 @@ global.googleAppPassword="arcb vsho izqe fwzh"
 global.environementName = "Agriniri"
 global.dbName = "appDetails"
 global.mongoDir = "./applicationFiles/database/mongoData/"
+global.mongoName = "mongoData"
 global.passwordSaltRound = 10
 global.jwtReToken = "REFRESH0085"
 global.jwtReTokenExp = "1m"

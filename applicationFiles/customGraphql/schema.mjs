@@ -56,17 +56,18 @@ export const typeDefs =
   }
 
   type productInfo {
+    uniqueId:String
     productId: String
     productName: String
     productPrice: Float
     productDesc: String
     productRating: Int
     locationDetail: String
-    productImage: Upload
+    productImage: String
     productQuantityAvaliable: Float 
     productQuantityUsed: Float
     minOrderReq: Float
-    MultipleOrderRequest: Float 
+    MultipleOrderRequest: Float
     response: String
     status: Int
   }

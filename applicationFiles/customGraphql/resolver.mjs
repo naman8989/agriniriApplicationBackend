@@ -58,7 +58,7 @@ export const resolvers = {
             }
 
             if (element.userOrderInfo) {
-              // result.userOrderInfo = await createOrderInfo(element.userOrderInfo)
+              result.userOrderInfo = await createOrderInfo(element.userOrderInfo)
             }
 
             if (element.userEarningInfo) {

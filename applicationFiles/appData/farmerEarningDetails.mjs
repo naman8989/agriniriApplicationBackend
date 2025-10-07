@@ -10,23 +10,40 @@ export async function createFarmerEarningDetails(jsonData) {
             }]
         }
         let mongodb = new mongoInstance(jsonData.uniqueId)
-        let insetData = {productDetails:null,farmerPastEarning:null}
-        if (jsonData.productDetails){
-            insetData.productDetails = jsonData.productDetails 
-        }
-        if (jsonData.farmerPastEarning){
-            insetData.farmerPastEarning = jsonData.farmerPastEarningData
-        }
-        await mongodb.insertData(insetData)
-        mongodb.close()
+        try {
+      
+            // Check if collection already has productDetails
+            const doesExist = await mongodb.findAllData({ productDetails: { $exists: true } });
+            
+            // console.log("allData mongo -> ", doesExist.length);
+            if (doesExist.length === 0 ) {
+                const insertData = {
+                    productDetails: jsonData.productDetails ,
+                    farmerPastEarningData: jsonData.farmerPastEarningData 
+                };
 
-        return [{
+                // Insert initial document
+                await mongodb.insertData(insertData);
+            }
+
+            // await mongodb.close();
+
+            return [{
             uniqueId: jsonData.uniqueId,
-            productData:jsonData.productData,
-            farmerPastEarningData: jsonData.farmerPastEarningData,
-            status:200,
-            response:"Collection created"
-        }]
+            productData: jsonData.productData || null,
+            farmerPastEarningData: jsonData.farmerPastEarningData || null,
+            status: 200,
+            response: "Collection created"
+            }];
+
+        } catch (e) {
+            console.error("Error in FarmerEarningDetails ->", e);
+            await mongodb.close();
+            return [{
+            status: 400,
+            response: "Problem in creating your account. Try again later!"
+            }];
+        }
 
     }catch(e){
         return [{
