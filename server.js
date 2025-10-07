@@ -4,10 +4,16 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import multer from 'multer';
 
+// import { resolver } from './applicationFiles/customGraphql/resolver.mjs';
+// import { schema } from './applicationFiles/customGraphql/schema.mjs';
+// import { graphqlHTTP } from "express-graphql"
+
+
 const app = express();
 const port = 3000;
 const address = "0.0.0.0";
 const upload = multer();
+
 
 // Middleware to handle request and response
 app.use(express.json()); // To handle JSON payloads in POST requests
@@ -27,6 +33,11 @@ app.use((req,res,next)=>{
   console.log(req.url)
   next()
 })
+
+// app.post("/graphql",graphqlHTTP({
+//   schema:schema,
+//   rootValue: resolver,
+// }))
 
 // app.get("/",(req,res)=>{
 //   res.statusCode = 200

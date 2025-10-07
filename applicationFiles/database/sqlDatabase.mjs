@@ -38,6 +38,14 @@ export default class dbInstance {
         if(this.tableName == "shopDetails"){
             tableQuery = `CREATE TABLE IF NOT EXISTS ${this.tableName} (userId TEXT , phoneNumber TEXT , shopName TEXT , panOwnerName TEXT , panNumber TEXT , frontPanImage TEXT , googleLocation TEXT , shopAddress TEXT , pinCode TEXT , businessType TEXT , deliveryTime TEXT)`
         }
+        if (this.tableName == "farmerDetails") { 
+            tableQuery = `CREATE TABLE IF NOT EXISTS farmerDetails ( id INTEGER PRIMARY KEY AUTOINCREMENT, farmerName TEXT, phoneNumber TEXT, address TEXT, cropType TEXT, landSize TEXT )`;
+        }
+        if (!tableQuery) {
+            console.warn(`⚠️ No table definition found for ${this.tableName}`);
+            return;
+        }
+
         this.db.serialize(() => {
             this.db.run(tableQuery, (err) => {
                 if (err) {

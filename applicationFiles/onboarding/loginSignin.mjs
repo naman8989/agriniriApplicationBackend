@@ -44,45 +44,76 @@ function generateBase64Id(email, password) {
   return base64Id;
 }
 
-export function createUser(req, res, name, email, password) {
-  if (req == undefined || email == undefined || password == undefined || name == undefined) {
-    res.json({ 'response': `Email, Password or name not present` })
-    // console.log((req  != undefined ), (email  != undefined ),( password  != undefined))
-    return
-  }
-
-  bcrypt.hash(password, global.passwordSaltRound, (err, hash) => {
-    if (err) {
-      res.json({ "response": "Error while making hash password" })
-      return
-    } else {
-      // Store the hash in your database
-      let uniqueId = generateBase64Id(email, password)
-      if (hash != null || uniqueId != null) {
-        // check for if user is present or not
-        userData.findInColumn("email", email).then(foundUser => {
-
-          if (foundUser[1].length != 0){
-            res.json({ 'response': `Email already present`, "uniqueId": `null` })
-          }else{
-            // create new user id and password
-            // send it to database
-            userData.insertData(["name", "email", "hashedPassword", "uniqueId"], [name, email, hash, uniqueId])
-            res.statusCode = 200
-            res.json({ 'response': `Got the uniqueId`, "uniqueId": `${uniqueId}`, "SessionToken": jwt.sign({name:req.body.name,email:req.body.email} ,global.jwtSeToken,{expiresIn:global.jwtSeTokenExp}) })
-          }
-        })
-       
-      } else {
-        res.statusCode = 404
-        res.json({ 'response': `Error while creating user`, "uniqueId": `null` })
-        return
-      }
-
+export async function createUser(jsonData) {
+  try {
+    // basic validation
+    if (!jsonData.emailPhone || !jsonData.hashPassword || !jsonData.name) {
+      return [{ status: 400, response: "Email, Password or Name not present" }]
     }
-  })
 
+    // hash password
+    const hash = await bcrypt.hash(jsonData.hashPassword, global.passwordSaltRound);
+
+    // uniqueId generation
+    const uniqueId = generateBase64Id(jsonData.emailPhone, hash);
+
+    if (!hash || !uniqueId) {
+      return [{status: 400 , response: "Error while creating user. Try again later!" }]
+    }
+
+    // check if user exists
+    const foundUser = await userData.findInColumn("emailPhone", jsonData.emailPhone);
+
+    if (foundUser[1].length > 0) {
+      return [{status: 409 , response : "Account already exists. Signup with another account!"}]
+    }
+
+    // create JWT
+    const reToken = await new Promise((resolve, reject) => {
+      jwt.sign(
+        { name: jsonData.name, email: jsonData.emailPhone },
+        global.jwtSeToken,
+        { expiresIn: global.jwtSeTokenExp },
+        (err, token) => {
+          if (err) reject(err);
+          else resolve(token);
+        }
+      );
+    });
+
+    // insert data into DB
+    const data = await userData.insertData(
+      ["name", "emailPhone", "hashedPassword", "uniqueId", "occupation", "reToken", "kycStatus"],
+      [
+        jsonData.name,
+        jsonData.emailPhone,
+        hash,
+        uniqueId,
+        jsonData.occupation,
+        reToken,
+        jsonData.kycStatus || 0,
+      ]
+    );
+
+    // prepare result
+    return[{
+      status : 200,
+      response : "Data Stored Successfully",
+      
+      name : jsonData.name,
+      emailPhone : jsonData.emailPhone,
+      uniqueId : uniqueId,
+      retoken : reToken,
+      occupation : jsonData.occupation,
+      kycStatus : jsonData.kycStatus 
+    }]
+  
+  } catch (err) {
+    console.error("Error in createUser:", err);
+    return [{status : 500, response : "Internal Server Error" }]
+  }
 }
+
 
 export async function loginUser(req, res, email, password) {
   // check the req data 
@@ -106,9 +137,13 @@ export async function loginUser(req, res, email, password) {
       // Store the hash in your database
       ret[1][0]["hashedPassword"] = true
       ret[1][0]["SessionToken"] = jwt.sign(ret[1][0],global.jwtSeToken,{expiresIn:global.jwtSeTokenExp})
+      ret[1][0]["response"] = "You are Loged."
+      // ret[1][0]["uniqueId"] = 
     } else {
       ret[1][0]["hashedPassword"] = false
+      ret[1][0]["response"] = "Entered Wrong Password ! "
     }
+    console.log(ret[1][0])
     res.json(ret[1][0])
   });
 }
@@ -132,6 +167,18 @@ export async function crudOccupation(req,res,uniqueId,read,update){
     res.json({"response":"Occupation updated"})
   }
   return 
+}
+
+export async function verifyToken(reToken){
+  try {
+    decode = jwt.verify(reToken, global.jwtReToken)
+  } catch (err) {
+    res.statusCode = 503
+    res.json({ 'response': 'Refresh token expired' });
+    return false
+  }
+  console.log("decode ",decode)
+  return true
 }
 
 // module.exports = {loginUser,createUser}
