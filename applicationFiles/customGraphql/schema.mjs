@@ -26,12 +26,12 @@ export const typeDefs =
     farmerName: String
     phoneNumber: String
     address:String
-    typeOfCrop: String
+    cropType: String
     landSize: String
-    yearOfExp: Int
-    location: String
+    experience: Int
+    googleLocation: String
     addharImage: Upload
-    referralCode: String
+    referalCode: String
     response: String
     status: Int
   }
@@ -41,22 +41,22 @@ export const typeDefs =
     shopkeeperName:String
     phoneNumber: String
     shopName: String
-    panName: String
+    panOwnerName: String
     panNumber: String
-    panImage: Upload
-    shopLocation: String
+    frontPanImage: Upload
+    googleLocation: String
     shopAddress: String
-    areaPinCode: Int
+    pinCode: Int
     businessType: String
     deliveryTime: String
-    gstNumber: String
+    gst: String
     referralCode: String
     response: String
     status: Int
   }
 
   type productInfo {
-    uniqueId:String
+    farmerUniqueId:String
     productId: String
     productName: String
     productPrice: Float
@@ -68,6 +68,7 @@ export const typeDefs =
     productQuantityUsed: Float
     minOrderReq: Float
     MultipleOrderRequest: Float
+    live:String
     response: String
     status: Int
   }
@@ -89,16 +90,17 @@ export const typeDefs =
   }
 
   type orderInfo{
-    uniqueId: String
-    productId: String 
-    orderId: String
-    paymentId: String
-    totalAmount: Float
-    paymentStatus: String
-    shipmentStatus: String
-    quantiyGetting: Float
-    shipmentInfo: String
-    paymentMethod: String
+    orderId:  String
+    shopUniqueId:  String
+    paymentId:  String
+    totalAmount:  Float
+    accoragement:  String
+    paymentStatus:  String
+    paymentMethod:  String
+    shipmentStatus:  String
+    shipmentInfo:  String
+    quantityGetting:  Float
+    productId:  String
     response: String
     status: Int
   }
@@ -137,9 +139,10 @@ export const typeDefs =
     userShopDetail: userShopDetailInput
     userShopCart: userShopCartInput
     userFarmerEarning: userFarmerEarningInput
-    userProductInfo: userProductInfoInput
-    userOrderInfo: userOrderInfoInput
+    userProductInfo: productInfoInput
+    userOrderInfo: orderInfoInput
     userEarningInfo: userEarningInfoInput
+
   }
 
 
@@ -151,6 +154,12 @@ export const typeDefs =
     reToken: String
     occupation: occupationOptions
     kycStatus: Int
+
+    
+    searchPoint:String
+    searchValue:String
+    updatePoint:String
+    updateData:String
   }
 
   input userFarmDetailInput {
@@ -158,12 +167,12 @@ export const typeDefs =
     farmerName: String
     phoneNumber: String
     address:String
-    typeOfCrop: String
+    cropType: String
     landSize: String
-    yearOfExp: Int
-    location: String
+    experience: Int
+    googleLocation: String
     addharImage: Upload
-    referralCode: String
+    referalCode: String
   }
 
   input userShopDetailInput {
@@ -171,20 +180,20 @@ export const typeDefs =
     shopkeeperName:String
     phoneNumber: String
     shopName: String
-    panName: String
+    panOwnerName: String
     panNumber: String
-    panImage: Upload
-    shopLocation: String
+    frontPanImage: Upload
+    googleLocation: String
     shopAddress: String
-    areaPinCode: Int
+    pinCode: Int
     businessType: String
     deliveryTime: String
-    gstNumber: String
+    gst: String
     referralCode: String
   }
 
-  input userProductInfoInput {
-    uniqueId:String
+  input productInfoInput {
+    farmerUniqueId:String
     productId: String
     productName: String
     productPrice: Float
@@ -196,32 +205,34 @@ export const typeDefs =
     productQuantityUsed: Float
     minOrderReq: Float
     MultipleOrderRequest: Float 
+    live:String
   }
 
   input userShopCartInput {
     uniqueId:String
-    productData:[userProductInfoInput]
-    shopPastOrderData:[userOrderInfoInput]
+    productData:[productInfoInput]
+    shopPastOrderData:[orderInfoInput]
   }
 
   input userFarmerEarningInput {
     uniqueId:String
-    productData:[userProductInfoInput]
+    productData:[productInfoInput]
     farmerPastEarningData:[userEarningInfoInput]
   }
 
 
-  input userOrderInfoInput {
-    uniqueId: String
-    productId: String 
-    orderId: String
-    paymentId: String
-    totalAmount: Float
-    paymentStatus: String
-    shipmentStatus: String
-    quantiyGetting: Float
-    shipmentInfo: String
-    paymentMethod: String
+  input orderInfoInput {
+    orderId:  String
+    shopUniqueId:  String
+    paymentId:  String
+    totalAmount:  Float
+    accoragement:  String
+    paymentStatus:  String
+    paymentMethod:  String
+    shipmentStatus:  String
+    shipmentInfo:  String
+    quantityGetting:  Float
+    productId:  String
   }
 
   input userEarningInfoInput {

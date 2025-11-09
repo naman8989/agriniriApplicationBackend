@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KYC Status — Farmer / Shopkeeper</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; }
+    .card { border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+    #flashMessage { display: none; }
+  </style>
+</head>
+<body>
+<div class="container mt-5">
+  <div class="card">
+    <div class="card-header bg-primary text-white text-center">
+      <h4>KYC Status</h4>
+    </div>
+    <div class="card-body">
+
+      <div id="flashMessage" class="alert text-center"></div>
+
+      <div class="mb-3">
+        <label class="form-label fw-bold">Select KYC Type</label>
+        <select id="kycType" class="form-select">
+          <option value="" selected disabled>Choose...</option>
+          <option value="farmer">Farmer</option>
+          <option value="shopkeeper">Shopkeeper</option>
+        </select>
+      </div>
+
+      <div class="d-flex mb-3">
+        <input type="text" id="loadUniqueId" class="form-control me-2" placeholder="Enter Unique ID to Load Data">
+        <button id="loadDataBtn" class="btn btn-outline-primary">Load KYC Data</button>
+        <button id="newBtn" class="btn btn-link">New</button>
+      </div>
+
+      <!-- FARMER FORM -->
+      <form id="farmerForm" class="form-section" autocomplete="off">
+        <h5 class="mb-3 text-primary">Farmer KYC Details</h5>
+        <div class="row g-3">
+          <!-- Added name attributes for every input -->
+          <div class="col-md-6">
+            <label class="form-label">Unique ID</label>
+            <input type="text" class="form-control" id="uniqueId" name="uniqueId" placeholder="Enter Unique ID">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Farmer Name</label>
+            <input type="text" class="form-control" id="farmerName" name="farmerName" placeholder="Enter Farmer Name">
+          </div>
+          <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" id="phoneNumber" name="phoneNumber" placeholder="Enter Phone Number"></div>
+          <div class="col-md-6"><label class="form-label">Address</label><input type="text" class="form-control" id="address" name="address" placeholder="Enter Address"></div>
+          <div class="col-md-6"><label class="form-label">Crop Type</label><input type="text" class="form-control" id="cropType" name="cropType" placeholder="Enter Crop Type"></div>
+          <div class="col-md-6"><label class="form-label">Land Size</label><input type="text" class="form-control" id="landSize" name="landSize" placeholder="Enter Land Size"></div>
+          <div class="col-md-6"><label class="form-label">Experience</label><input type="text" class="form-control" id="experience" name="experience" placeholder="Enter Experience"></div>
+          <div class="col-md-6"><label class="form-label">Google Location</label><input type="text" class="form-control" id="googleLocation" name="googleLocation" placeholder="Paste Google Location link"></div>
+          <div class="col-md-6"><label class="form-label">Aadhaar Image</label><input type="file" class="form-control" id="addharImage" name="addharImage" accept="image/*"></div>
+          <div class="col-md-6"><label class="form-label">Referral Code</label><input type="text" class="form-control" id="referalCode" name="referalCode" placeholder="Enter Referral Code"></div>
+        </div>
+        <div class="text-center mt-4">
+          <button type="submit" class="btn btn-success px-4" id="submitFarmer">Submit Farmer KYC</button>
+        </div>
+      </form>
+
+      <!-- SHOPKEEPER FORM -->
+      <form id="shopkeeperForm" class="form-section" autocomplete="off">
+        <h5 class="mb-3 text-primary">Shopkeeper KYC Details</h5>
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Unique ID</label><input type="text" class="form-control" id="uniqueIdShop" name="uniqueId" placeholder="Enter Unique ID"></div>
+          <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" id="phoneNumberShop" name="phoneNumber" placeholder="Enter Phone Number"></div>
+          <div class="col-md-6"><label class="form-label">Shop Name</label><input type="text" class="form-control" id="shopName" name="shopName" placeholder="Enter Shop Name"></div>
+          <div class="col-md-6"><label class="form-label">PAN Owner Name</label><input type="text" class="form-control" id="panOwnerName" name="panOwnerName" placeholder="Enter PAN Owner Name"></div>
+          <div class="col-md-6"><label class="form-label">PAN Number</label><input type="text" class="form-control" id="panNumber" name="panNumber" placeholder="Enter PAN Number"></div>
+          <div class="col-md-6"><label class="form-label">Front PAN Image</label><input type="file" class="form-control" id="frontPanImage" name="frontPanImage" accept="image/*"></div>
+          <div class="col-md-6"><label class="form-label">Google Location</label><input type="text" class="form-control" id="googleLocationShop" name="googleLocation" placeholder="Paste Google Location link"></div>
+          <div class="col-md-6"><label class="form-label">Shop Address</label><input type="text" class="form-control" id="shopAddress" name="shopAddress" placeholder="Enter Shop Address"></div>
+          <div class="col-md-6"><label class="form-label">Pin Code</label><input type="text" class="form-control" id="pinCode" name="pinCode" placeholder="Enter Pin Code"></div>
+          <div class="col-md-6"><label class="form-label">Business Type</label><input type="text" class="form-control" id="businessType" name="businessType" placeholder="Enter Business Type"></div>
+          <div class="col-md-6"><label class="form-label">Delivery Time</label><input type="text" class="form-control" id="deliveryTime" name="deliveryTime" placeholder="Enter Delivery Time"></div>
+          <div class="col-md-6"><label class="form-label">GST</label><input type="text" class="form-control" id="gst" name="gst" placeholder="Enter GST Number"></div>
+          <div class="col-md-6"><label class="form-label">Referral Code</label><input type="text" class="form-control" id="referralCode" name="referralCode" placeholder="Enter Referral Code"></div>
+          <div class="col-md-6"><label class="form-label">Shopkeeper Name</label><input type="text" class="form-control" id="shopkeeperName" name="shopkeeperName" placeholder="Enter Shopkeeper Name"></div>
+        </div>
+        <div class="text-center mt-4">
+          <button type="submit" class="btn btn-success px-4" id="submitShopkeeper">Submit Shopkeeper KYC</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const kycType = document.getElementById('kycType');
+  const farmerForm = document.getElementById('farmerForm');
+  const shopkeeperForm = document.getElementById('shopkeeperForm');
+  const flashMsg = document.getElementById('flashMessage');
+  const loadUniqueId = document.getElementById('loadUniqueId');
+  const loadBtn = document.getElementById('loadDataBtn');
+  const newBtn = document.getElementById('newBtn');
+
+  function showFlash(msg, type = 'success') {
+    flashMsg.textContent = msg;
+    flashMsg.className = `alert alert-${type} text-center`;
+    flashMsg.style.display = 'block';
+    setTimeout(() => flashMsg.style.display = 'none', 3500);
+  }
+
+  function hideAllForms() {
+    farmerForm.classList.remove('active');
+    shopkeeperForm.classList.remove('active');
+  }
+
+  // Switch forms when type changes
+  kycType.addEventListener('change', () => {
+    hideAllForms();
+    if (kycType.value === 'farmer') farmerForm.classList.add('active');
+    if (kycType.value === 'shopkeeper') shopkeeperForm.classList.add('active');
+    document.getElementById('uniqueId').readOnly = false;
+    document.getElementById('uniqueIdShop').readOnly = false;
+  });
+
+  // Clear for new entry
+  newBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    loadUniqueId.value = '';
+    [farmerForm, shopkeeperForm].forEach(form => {
+      form.reset();
+      const uid = form.querySelector('input[name="uniqueId"]');
+      if (uid) uid.readOnly = false;
+      const saveBtn = form.querySelector('#saveChangesBtn');
+      if (saveBtn) saveBtn.remove();
+    });
+    showFlash('Ready for new KYC entry', 'info');
+  });
+
+  // === LOAD DATA USING UNIQUE ID ===
+  loadBtn.addEventListener('click', async () => {
+    const id = loadUniqueId.value.trim();
+    const type = kycType.value;
+    if (!type || !id) return showFlash('Select KYC type and enter Unique ID to load', 'warning');
+
+    try {
+      const query = `
+        mutation {
+          operateAllUserData(
+            operation: "read",
+            input: [
+              { ${type === 'farmer' ? 'userFarmDetail' : 'userShopDetail'}: { uniqueId: "${id}" } }
+            ]
+          ) {
+            ${type === 'farmer' ? 'userFarmDetail' : 'userShopDetail'} {
+              ${type === 'farmer'
+                ? 'uniqueId farmerName phoneNumber address cropType landSize experience googleLocation addharImage referalCode response status'
+                : 'uniqueId shopkeeperName phoneNumber shopName panOwnerName panNumber frontPanImage googleLocation shopAddress pinCode businessType deliveryTime gst referralCode response status'}
+            }
+          }
+        }
+      `;
+
+      const res = await fetch('/graphql-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+
+      const result = await res.json();
+      const kyc =
+        type === 'farmer'
+          ? result?.data?.operateAllUserData?.[0]?.userFarmDetail?.[0]
+          : result?.data?.operateAllUserData?.[0]?.userShopDetail?.[0];
+
+      if (!kyc || kyc.status !== 200) {
+        showFlash('No KYC record found for this Unique ID', 'danger');
+        return;
+      }
+
+      // Fill in form data
+      if (type === 'farmer') {
+        farmerForm.classList.add('active');
+        shopkeeperForm.classList.remove('active');
+        for (const key in kyc) {
+          const el = farmerForm.querySelector(`[name="${key}"]`);
+          if (el && el.type !== 'file') el.value = kyc[key];
+        }
+        const uid = farmerForm.querySelector('[name="uniqueId"]');
+        if (uid) uid.readOnly = true;
+        addSaveButton(farmerForm, 'farmer');
+      } else {
+        shopkeeperForm.classList.add('active');
+        farmerForm.classList.remove('active');
+        for (const key in kyc) {
+          const el = shopkeeperForm.querySelector(`[name="${key}"]`);
+          if (el && el.type !== 'file') el.value = kyc[key];
+        }
+        const uid = shopkeeperForm.querySelector('[name="uniqueId"]');
+        if (uid) uid.readOnly = true;
+        addSaveButton(shopkeeperForm, 'shopkeeper');
+      }
+
+      showFlash('✅ KYC Data Loaded Successfully!');
+    } catch (err) {
+      console.error(err);
+      showFlash('❌ Error loading KYC data', 'danger');
+    }
+  });
+
+  // === FUNCTION TO ADD SAVE BUTTON ===
+  function addSaveButton(form, type) {
+    if (form.querySelector('#saveChangesBtn')) return; // avoid duplicates
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save Changes';
+    saveBtn.className = 'btn btn-warning px-4 ms-3';
+    saveBtn.id = 'saveChangesBtn';
+    form.querySelector('.text-center').appendChild(saveBtn);
+
+    saveBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await updateKYC(form, type);
+    });
+  }
+
+  // === UPDATE KYC (SAVE CHANGES) ===
+  async function updateKYC(form, type) {
+    const formData = new FormData(form);
+    const uniqueId = formData.get('uniqueId');
+    if (!uniqueId) return showFlash('Unique ID missing!', 'danger');
+
+    let query = '';
+
+    if (type === 'farmer') {
+      const farmerName = escapeGraphQLString(formData.get('farmerName'));
+      const phoneNumber = escapeGraphQLString(formData.get('phoneNumber'));
+      const address = escapeGraphQLString(formData.get('address'));
+      const cropType = escapeGraphQLString(formData.get('cropType'));
+      const landSize = escapeGraphQLString(formData.get('landSize'));
+      const experience = escapeGraphQLString(formData.get('experience'));
+      const googleLocation = escapeGraphQLString(formData.get('googleLocation'));
+      const referalCode = escapeGraphQLString(formData.get('referalCode'));
+
+      query = `
+        mutation {
+          operateAllUserData(
+            operation: "update",
+            input: [
+              { userFarmDetail: {
+                  uniqueId: "${uniqueId}",
+                  farmerName: "${farmerName}",
+                  phoneNumber: "${phoneNumber}",
+                  address: "${address}",
+                  cropType: "${cropType}",
+                  landSize: "${landSize}",
+                  experience: ${experience},
+                  googleLocation: "${googleLocation}",
+                  addharImage: "",
+                  referalCode: "${referalCode}"
+              } }
+            ]
+          ) {
+            userFarmDetail { response status }
+          }
+        }
+      `;
+    } else if (type === 'shopkeeper') {
+      const shopkeeperName = escapeGraphQLString(formData.get('shopkeeperName'));
+      const phoneNumber = escapeGraphQLString(formData.get('phoneNumber'));
+      const shopName = escapeGraphQLString(formData.get('shopName'));
+      const panOwnerName = escapeGraphQLString(formData.get('panOwnerName'));
+      const panNumber = escapeGraphQLString(formData.get('panNumber'));
+      const googleLocation = escapeGraphQLString(formData.get('googleLocation'));
+      const shopAddress = escapeGraphQLString(formData.get('shopAddress'));
+      const pinCode = escapeGraphQLString(formData.get('pinCode'));
+      const businessType = escapeGraphQLString(formData.get('businessType'));
+      const deliveryTime = escapeGraphQLString(formData.get('deliveryTime'));
+      const gst = escapeGraphQLString(formData.get('gst'));
+      const referralCode = escapeGraphQLString(formData.get('referralCode'));
+
+      query = `
+        mutation {
+          operateAllUserData(
+            operation: "update",
+            input: [
+              { userShopDetail: {
+                  uniqueId: "${uniqueId}",
+                  shopkeeperName: "${shopkeeperName}",
+                  phoneNumber: "${phoneNumber}",
+                  shopName: "${shopName}",
+                  panOwnerName: "${panOwnerName}",
+                  panNumber: "${panNumber}",
+                  frontPanImage: "",
+                  googleLocation: "${googleLocation}",
+                  shopAddress: "${shopAddress}",
+                  pinCode: ${pinCode},
+                  businessType: "${businessType}",
+                  deliveryTime: "${deliveryTime}",
+                  gst: "${gst}",
+                  referralCode: "${referralCode}"
+              } }
+            ]
+          ) {
+            userShopDetail { response status }
+          }
+        }
+      `;
+    }
+
+    try {
+      const res = await fetch('/graphql-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      const result = await res.json();
+      const status =
+        type === 'farmer'
+          ? result?.data?.operateAllUserData?.[0]?.userFarmDetail?.[0]?.status
+          : result?.data?.operateAllUserData?.[0]?.userShopDetail?.[0]?.status;
+
+      if (status === 200) showFlash('✅ Changes saved successfully!');
+      else showFlash('⚠️ Failed to save changes', 'danger');
+    } catch (err) {
+      console.error(err);
+      showFlash('❌ Error saving changes', 'danger');
+    }
+  }
+
+  // === ESCAPE UTILITY ===
+  function escapeGraphQLString(str = '') {
+    return str
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n')
+      .trim();
+  }
+</script>
+
+
+</body>
+</html>

@@ -171,13 +171,14 @@ export async function crudOccupation(req,res,uniqueId,read,update){
 
 export async function verifyToken(reToken){
   try {
-    decode = jwt.verify(reToken, global.jwtReToken)
+    let decode = jwt.verify(reToken, global.jwtReToken)
   } catch (err) {
-    res.statusCode = 503
-    res.json({ 'response': 'Refresh token expired' });
+    // console.log("decode ",decode)
+    // res.statusCode = 503
+    // res.json({ 'response': 'Refresh token expired' });
     return false
   }
-  console.log("decode ",decode)
+  // console.log("decode ",decode)
   return true
 }
 

@@ -8,6 +8,7 @@ import { createShopDetails } from "../gatherDetails/shopDetails.mjs";
 import { createFarmerEarningDetails } from "../appData/farmerEarningDetails.mjs";
 import { createShopCartDetails } from "../appData/shopCardDetails.mjs";
 import { createEarningInfo, createOrderInfo, createProductDetails } from "../appData/appFlowDetails.mjs";
+import { updateUser , getUser, deleteUser, getKycStatus, updateFarmerDetails, updateShopkeeperDetails, getProductInfo, updateProductDetails, getOrderInfo, updateOrderInfo } from "../database/operateAllDatabase.mjs";
 
 // Resolvers
 export const resolvers = {
@@ -65,8 +66,51 @@ export const resolvers = {
               // result.userEarningInfo = await createEarningInfo(element.userEarningInfo)
             }
 
-          }else if(operation == "update"){
+          }else if(operation == "read"){
+            if (element.userPrimaryData) {
+              result.userPrimaryData = await getUser(element.userPrimaryData)
+            }
             
+            if(element.userFarmDetail ){
+              result.userFarmDetail = await getKycStatus(element.userFarmDetail,"Farmer")
+            }
+
+            if(element.userShopDetail){
+              result.userShopDetail = await getKycStatus(element.userShopDetail,"Shopkeeper")
+            }
+            
+            if(element.userProductInfo){
+              result.userProductInfo = await getProductInfo(element.userProductInfo)
+            }
+
+            if(element.userOrderInfo){
+              result.userOrderInfo = await getOrderInfo(element.userOrderInfo)
+            }
+            
+
+          }else if(operation == "update"){
+            if(element.userPrimaryData){
+              result.userPrimaryData = await updateUser(element.userPrimaryData)
+            }
+
+            if(element.userFarmDetail){
+              result.userFarmDetail = await updateFarmerDetails(element.userFarmDetail)
+            }
+
+            if(element.userShopDetail){
+              result.userShopDetail = await updateShopkeeperDetails(element.userShopDetail)
+            }
+
+            if(element.userProductInfo){
+              result.userProductInfo = await updateProductDetails(element.userProductInfo)
+            }
+
+            if(element.userOrderInfo){
+              result.userOrderInfo = await updateOrderInfo(element.userOrderInfo)
+            }
+
+          }else if (operation == "delete"){
+            // result.userPrimaryData = await deleteUser(element.userPrimaryData)    // not working
           }
 
 

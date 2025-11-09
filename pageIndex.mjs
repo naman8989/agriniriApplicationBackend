@@ -1,7 +1,10 @@
 import { parse } from "path"
 import url from 'url'
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 
-// import { loginUser, createUser, verifyToken } from "./applicationFiles/onboarding/loginSignin.mjs"
+import { loginUser, createUser, verifyToken } from "./applicationFiles/onboarding/loginSignin.mjs"
 // import { getShopDetails } from "./applicationFiles/gatherDetails/shopDetails.mjs"
 // import { storeFarmerDetailsMongo } from "./applicationFiles/gatherDetails/farmerDetails.mjs"
 // import { storeShopDetailsMongo } from "./applicationFiles/gatherDetails/shopDetails.mjs"
@@ -16,11 +19,13 @@ import { schema } from "./applicationFiles/customGraphql/resolver.mjs"
 // import { exeSchema } from "./applicationFiles/customGraphql/resolver.mjs"
 import { resolvers } from "./applicationFiles/customGraphql/resolver.mjs"
 // const faqPage = require("./applicationFiles/faqDetails/extract_add_Details.cjs")
-
 // const addressInformation = require("./applicationFiles/gatherDetails/addressInformation.cjs")
 
+import { getHomeSchema , saveHomeSchema } from "./applicationFiles/adminBoard/adminFunctions.mjs";
 // import { Pages } from './pageIndex.mjs';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function tryCatchMiddle(req, res, next) {
     try {
@@ -71,11 +76,11 @@ export async function Pages(req, res) {
             }
             res.statusCode = 200
             if(req.body.Retoken != "" ){
-                tem = await verifyToken(req.body.Retoken)
+                let tem = await verifyToken(req.body.Retoken)
                 if(tem){
                     res.json({'response':"Token verified!","status":true})
                 }else{
-                    res.json({'response':"Token not verified!","status":false})
+                    res.json({'response':"Token not verified!","status":true})
                 }
                 break
             }
@@ -169,23 +174,118 @@ export async function Pages(req, res) {
             }
             break;
 
-        case "/occupation":
+        case "/adminHomeSchema":
+            if(req.method == 'GET'){
+                res.status(200)
+                res.setHeader("Content-Type", "text/html; charset=utf-8");
+                res.sendFile(path.join(__dirname,"applicationFiles","adminBoard","homeSchemaMaker.html"))
+                // res.end()
+            }
+            if(req.method == 'POST'){
+                console.log(req.body)
+                console.log(Object.keys(req.body.schema).length)
+                if(Object.keys(req.body.schema).length == 0){
+                    getHomeSchema(req,res)
+                }else{
+                    saveHomeSchema(req,res)
+                }
+            }
+            break
+        
+        case "/addProduct":
+            if(req.method == 'GET'){
+                res.status(200)
+                res.setHeader("Content-Type", "text/html; charset=utf-8");
+                res.sendFile(path.join(__dirname,"applicationFiles","adminBoard","addProduct.html"))
+                // res.end()
+            }
+            break
+
+        case "/createUsers":
+            if(req.method == 'GET'){
+                res.status(200)
+                res.setHeader("Content-Type", "text/html; charset=utf-8");
+                res.sendFile(path.join(__dirname,"applicationFiles","adminBoard","create_user.html"))
+                // res.end()
+            }
+            break
+        
+        case "/kyc_status":
+            if(req.method == 'GET'){
+                res.status(200)
+                res.setHeader("Content-Type", "text/html; charset=utf-8");
+                res.sendFile(path.join(__dirname,"applicationFiles","adminBoard","kyc_status.html"))
+                // res.end()
+            }
+            break
+        
+        case "/shopHomePage":
             if (req.method != 'POST') {
                 res.statusCode = 404
                 res.json({ 'response': 'Use POST method' });
                 break
             }
+            let retString = JSON.stringify({
+                "carouselBanners": [
+                {
+                    "id": 1,
+                    "text": "Get 40% discount\non your first order!",
+                    "color": 0xFF81C784, // Colors.green[300]
+                    "height": 200.0,
+                    "position": 0
+                },
+                {
+                    "id": 1,
+                    "text": "Buy 1 Get 1 free",
+                    "color": 0xFF81C784, // Colors.green[300]
+                    "height": 200.0,
+                    "position": 0
+                },
+                ],
+                "banners": [
+                {
+                    "id": 1,
+                    "text": "Get 40% discount\non your first order!",
+                    "color": 0xFF81C784, // Colors.green[300]
+                    "height": 200.0,
+                    "position": 0
+                }
+                ],
+                "iconSlideshow": [
+                    {"label": "Veggies", "codePoint": 0xe1aa, "fontFamily": "MaterialIcons"},
+                    {"label": "Fruits", "codePoint": 0xf522, "fontFamily": "MaterialIcons"},
+                    {"label": "Dairy", "codePoint": 0xe1b1, "fontFamily": "MaterialIcons"}
+                ],
+                "gridList": {
+                "title": "Favourites",
+                "count": 4,
+                "crossAxisCount": 2,
+                "items": [
+                    {"page": "ProductDescriptionPage", "type": "popular"},
+                    {"page": "ProductDescriptionPage", "type": "popular"},
+                    {"page": "ProductDescriptionPage", "type": "popular"},
+                    {"page": "ProductDescriptionPage", "type": "popular"}
+                ]
+                }})
+            res.end(retString)
+            break
+        // case "/occupation":
+        //     if (req.method != 'POST') {
+        //         res.statusCode = 404
+        //         res.json({ 'response': 'Use POST method' });
+        //         break
+        //     }
             // if (req.body.reToken == undefined){
             //     res.statusCode = 401
             //     res.json({ 'response': 'Refresh token not found' });
             //     break
             // }
-            if (req.body.uniqueId == undefined || req.body.read == undefined || req.body.update == undefined) {
-                res.statusCode = 401
-                res.json({ "response": "uniqueId, read, update one of them is missing" })
-                break
-            }
-            crudOccupation(req, res, req.body.uniqueId, req.body.read, req.body.update)
+            // if (req.body.uniqueId == undefined || req.body.read == undefined || req.body.update == undefined) {
+            //     res.statusCode = 401
+            //     res.json({ "response": "uniqueId, read, update one of them is missing" })
+            //     break
+            // }
+            // crudOccupation(req, res, req.body.uniqueId, req.body.read, req.body.update)
 
         case "/shopDetails":
             if (req.method != 'POST') {

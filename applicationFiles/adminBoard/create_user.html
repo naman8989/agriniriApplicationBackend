@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create User — Fixed Flash + Load User</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    .card-body { position: relative; }
+    #flashWrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 56px;
+      margin-bottom: 12px;
+      pointer-events: none;
+    }
+    #flashMessage {
+      pointer-events: auto;
+      max-width: 720px;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity .28s ease, transform .28s ease, visibility .28s;
+      visibility: hidden;
+    }
+    #flashMessage.show {
+      opacity: 1;
+      transform: translateY(0);
+      visibility: visible;
+    }
+    .pw-float {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      transform: translateY(8px);
+      z-index: 1100;
+      min-width: 250px;
+      white-space: normal;
+      font-size: 0.9rem;
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="card shadow-lg border-0 rounded-4">
+      <div class="card-body">
+        <h3 class="text-center mb-3">Create User</h3>
+
+        <div id="flashWrapper" aria-live="polite" aria-atomic="true">
+          <div id="flashMessage" class="alert text-center fw-semibold" role="alert" aria-hidden="true"></div>
+        </div>
+
+        <form id="userForm" class="row g-3">
+          <div class="col-md-6">
+            <label for="name" class="form-label fw-semibold">Name</label>
+            <input type="text" id="name" class="form-control" placeholder="Enter name" autocomplete="name" />
+          </div>
+          <div class="col-md-6">
+            <label for="emailPhone" class="form-label fw-semibold">Email / Phone</label>
+            <input type="text" id="emailPhone" class="form-control" placeholder="Enter email or phone" autocomplete="email" />
+          </div>
+          <div class="col-md-6 position-relative">
+            <label for="password" class="form-label fw-semibold">Password</label>
+            <input type="password" id="password" class="form-control" placeholder="Enter password" autocomplete="new-password" />
+            <div id="passwordFloat" class="alert alert-danger pw-float" role="alert" aria-live="polite"></div>
+          </div>
+          <div class="col-md-6">
+            <label for="occupation" class="form-label fw-semibold">Occupation</label>
+            <select id="occupation" class="form-select">
+              <option value="">Select</option>
+              <option value="Farmer">Farmer</option>
+              <option value="Shopkeeper">Shopkeeper</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <button type="submit" id="submitBtn" class="btn btn-primary w-100 py-2 fw-semibold">Add User</button>
+          </div>
+        </form>
+
+        <hr class="my-4" />
+
+        <!-- 🔹 Load User Section -->
+        <h5 class="mb-3">Load User</h5>
+        <div class="row g-3 align-items-end mb-4">
+          <div class="col-md-5">
+            <label class="form-label fw-semibold">Search Point</label>
+            <input type="text" id="searchPoint" class="form-control" placeholder="e.g. kycStatus" value="kycStatus">
+          </div>
+          <div class="col-md-5">
+            <label class="form-label fw-semibold">Value</label>
+            <input type="text" id="searchValue" class="form-control" placeholder="e.g. email or value">
+          </div>
+          <div class="col-md-2 d-grid">
+            <button id="loadUserBtn" class="btn btn-success fw-semibold">Load User</button>
+          </div>
+        </div>
+
+        <h5 class="mb-3">User List</h5>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped align-middle mb-0">
+            <thead class="table-primary">
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email/Phone</th>
+                <th>Occupation</th>
+                <th>kycStatus</th>
+                <th>Unique ID </th>
+                <th>retoken</th>
+              </tr>
+            </thead>
+            <tbody id="userBody">
+              <tr class="text-center text-muted"><td colspan="7">No users yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <hr class="my-4">
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const flash = document.getElementById('flashMessage');
+    const passwordFloat = document.getElementById('passwordFloat');
+    const form = document.getElementById('userForm');
+    const userBody = document.getElementById('userBody');
+
+
+    // --- Right-click Copy Context Menu ---
+    const contextMenu = document.createElement('div');
+    contextMenu.id = 'customContextMenu';
+    contextMenu.style.position = 'absolute';
+    contextMenu.style.background = '#fff';
+    contextMenu.style.border = '1px solid #ccc';
+    contextMenu.style.padding = '6px 10px';
+    contextMenu.style.borderRadius = '6px';
+    contextMenu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+    contextMenu.style.zIndex = 2000;
+    contextMenu.style.display = 'none';
+    contextMenu.style.cursor = 'pointer';
+    contextMenu.textContent = 'Copy';
+    document.body.appendChild(contextMenu);
+
+    let currentCell = null;
+
+    // Show context menu on right click
+    userBody.addEventListener('contextmenu', (e) => {
+    const cell = e.target.closest('td');
+    if (!cell) return;
+    e.preventDefault();
+    currentCell = cell;
+    contextMenu.style.top = e.pageY + 'px';
+    contextMenu.style.left = e.pageX + 'px';
+    contextMenu.style.display = 'block';
+    });
+
+    // Hide menu on outside click
+    document.addEventListener('click', (e) => {
+    if (!contextMenu.contains(e.target)) {
+        contextMenu.style.display = 'none';
+    }
+    });
+
+    // Handle copy
+    contextMenu.addEventListener('click', async () => {
+    if (!currentCell) return;
+    const text = currentCell.textContent.trim();
+    try {
+        await navigator.clipboard.writeText(text);
+        showFlash('Copied: ' + (text.length > 40 ? text.slice(0,40) + '...' : text), 'success', 2000);
+    } catch (err) {
+        console.error('Clipboard copy failed:', err);
+        showFlash('Failed to copy', 'danger');
+    }
+    contextMenu.style.display = 'none';
+    });
+
+
+
+    const inputs = {
+      name: document.getElementById('name'),
+      emailPhone: document.getElementById('emailPhone'),
+      password: document.getElementById('password'),
+      occupation: document.getElementById('occupation')
+    };
+    const searchPointInput = document.getElementById('searchPoint');
+    const searchValueInput = document.getElementById('searchValue');
+    const loadUserBtn = document.getElementById('loadUserBtn');
+
+    let users = [];
+    let flashTimer = null;
+
+    function showFlash(message, type = 'danger', duration = 3000) {
+      if (flashTimer) clearTimeout(flashTimer);
+      flash.textContent = message;
+      flash.className = 'alert text-center fw-semibold alert-' + type + ' show';
+      flash.setAttribute('aria-hidden', 'false');
+      flashTimer = setTimeout(() => hideFlash(), duration);
+    }
+    function hideFlash() {
+      flash.classList.remove('show');
+      flash.setAttribute('aria-hidden', 'true');
+      setTimeout(() => { flash.className = 'alert text-center fw-semibold'; flash.textContent = ''; }, 300);
+    }
+
+    let pwHideTimer = null;
+    function showPasswordFloat(message) {
+      if (pwHideTimer) clearTimeout(pwHideTimer);
+      passwordFloat.textContent = message;
+      passwordFloat.style.display = 'block';
+      pwHideTimer = setTimeout(hidePasswordFloat, 4000);
+    }
+    function hidePasswordFloat() {
+      passwordFloat.style.display = 'none';
+      passwordFloat.textContent = '';
+      if (pwHideTimer) clearTimeout(pwHideTimer);
+    }
+
+    function boolMessage(status, message) { return { status, message }; }
+    function checkName(name) {
+      const regex = /^[a-zA-Z ]+$/;
+      if (!regex.test(name)) return boolMessage(false, "Name must contain only letters and spaces");
+      if (name.length <= 3) return boolMessage(false, "At least 4 characters required");
+      if (name.length > 30) return boolMessage(false, "Maximum 30 characters allowed");
+      return boolMessage(true, "OK");
+    }
+    function checkEmailOrPhone(input) {
+      input = input.trim();
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      const phoneRegex = /^\d{10}$/;
+      if (emailRegex.test(input) || phoneRegex.test(input)) return boolMessage(true, "OK");
+      return boolMessage(false, "Invalid email or phone");
+    }
+    function checkPassword(password) {
+      const patterns = [/[A-Z]/, /[a-z]/, /\d/, /[@$!%*?&,.]/];
+      const msgs = [
+        "Include uppercase", "Include lowercase", "Include number", "Include special char"
+      ];
+      for (let i = 0; i < patterns.length; i++) if (!patterns[i].test(password)) return boolMessage(false, msgs[i]);
+      if (password.length < 8) return boolMessage(false, "Minimum 8 chars");
+      return boolMessage(true, "OK");
+    }
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const name = inputs.name.value.trim();
+      const emailPhone = inputs.emailPhone.value.trim();
+      const password = inputs.password.value;
+      const occupation = inputs.occupation.value.trim();
+      const n = checkName(name); if (!n.status) { showFlash(n.message); return; }
+      const e = checkEmailOrPhone(emailPhone); if (!e.status) { showFlash(e.message); return; }
+      const p = checkPassword(password); if (!p.status) { showPasswordFloat(p.message); return; }
+      hidePasswordFloat(); if (!occupation) { showFlash("Select occupation"); return; }
+
+      const query = `
+        mutation {
+          operateAllUserData(
+            operation: "create",
+            input: [
+              { userPrimaryData: {
+                name: "${escapeGraphQLString(name)}",
+                emailPhone: "${escapeGraphQLString(emailPhone)}",
+                hashPassword: "${escapeGraphQLString(password)}",
+                occupation: ${escapeGraphQLString(occupation)}
+              } }
+            ]
+          ) {
+            userPrimaryData {
+              response status name emailPhone uniqueId retoken occupation kycStatus
+            }
+          }
+        }`;
+
+      try {
+        const res = await fetch('/graphql-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+        const payload = await res.json();
+        const result = payload?.data?.operateAllUserData?.[0]?.userPrimaryData;
+        if (result?.response) {
+          showFlash(result.response, 'success', 2500);
+        } else showFlash(result?.response || 'Unknown error');
+      } catch (err) {
+        console.error(err);
+        showFlash('Error connecting to server');
+      }
+    });
+
+    // 🔹 Load latest user button
+    loadUserBtn.addEventListener('click', async () => {
+      const searchPoint = searchPointInput.value.trim();
+      const searchValue = searchValueInput.value.trim();
+      if (!searchPoint || !searchValue) {
+        showFlash("Please enter both Search Point and Value", "danger");
+        return;
+      }
+
+      const query = `mutation {
+        operateAllUserData(
+          operation: "read",
+          input: [
+            { userPrimaryData: {
+              searchPoint: "${escapeGraphQLString(searchPoint)}",`+
+              `${escapeGraphQLString(searchPoint)}: ${searchValue} ` +
+              `
+            } }
+          ]
+        ) {
+          userPrimaryData {
+            response status name emailPhone uniqueId retoken occupation kycStatus
+          }
+        }
+      }`;
+
+      try {
+        const res = await fetch("/graphql-data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "query": query })
+        });
+        const data = await res.json();
+        // console.log("-> ",searchValue)
+        const user = data?.data?.operateAllUserData?.[0]?.userPrimaryData;
+        if (user.length > 1) {
+        console.log(user)
+        
+          users = user;
+          console.log(users)
+          updateTable()
+          showFlash("Latest user loaded successfully!", "success");
+        } else {
+          showFlash("No user found.", "warning");
+        }
+      } catch (err) {
+        console.error(err);
+        showFlash("Failed to load user", "danger");
+      }
+    });
+
+    function updateTable() {
+        userBody.innerHTML = '';
+
+        if (!users.length) {
+            userBody.innerHTML = `<tr class="text-center text-muted"><td colspan="8">No users yet</td></tr>`;
+            return;
+        }
+
+        users.forEach((u, i) => {
+            userBody.innerHTML += `
+            <tr>
+                <td>${i + 1}</td>
+
+                <td contenteditable="true" 
+                    onblur="updateUserField('${u.uniqueId}', 'name', this.textContent)">
+                    ${escapeHtml(u.name || '')}
+                </td>
+
+                <td contenteditable="true" 
+                    onblur="updateUserField('${u.uniqueId}', 'emailPhone', this.textContent)">
+                    ${escapeHtml(u.emailPhone || '')}
+                </td>
+
+                <td contenteditable="true" 
+                    onblur="updateUserField('${u.uniqueId}', 'occupation', this.textContent)">
+                    ${escapeHtml(u.occupation || '')}
+                </td>
+
+                <td contenteditable="true" 
+                    onblur="updateUserField('${u.uniqueId}', 'kycStatus', this.textContent)">
+                    ${escapeHtml(u.kycStatus || '')}
+                </td>
+
+                <td>${escapeHtml(u.uniqueId || u.password || '')}</td>
+                <td>${escapeHtml(u.retoken || '')}</td>
+
+                </tr>`;
+                // <td>
+                // <button onclick="deleteUser('${u.uniqueId}')" class="btn btn-danger btn-sm">Delete</button>
+                // </td>
+        });
+    }
+
+    async function updateUserField(uniqueId, field, newValue) {
+        if (!uniqueId || !field) return;
+        try {
+            const query = `
+                mutation {
+                operateAllUserData(
+                    operation: "update",
+                    input: [
+                    { userPrimaryData: {
+                        searchPoint: "uniqueId",
+                        searchValue: "${escapeGraphQLString(uniqueId)}",
+                        updatePoint: "${escapeGraphQLString(field)}",
+                        updateData: "${escapeGraphQLString(newValue)}"
+                    } }
+                    ]
+                ) {
+                    userPrimaryData {
+                    response status name emailPhone uniqueId retoken occupation kycStatus
+                    }
+                }
+            }`;
+            console.log("query -> ",query)
+            const res = await fetch('/graphql-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({"query":query})
+            });
+
+            const data = await res.json();
+            console.log('Update response:', data);
+        } catch (err) {
+            console.error('Update failed:', err);
+        }
+    }
+
+    async function deleteUser(uniqueId) {
+        if (!confirm('Are you sure you want to delete this user?')) return;
+
+        try {
+            const query = `
+                mutation {
+                operateAllUserData(
+                    operation: "delete",
+                    input: [
+                    { userPrimaryData: {
+                        uniqueId: "${escapeGraphQLString(uniqueId)}",
+                    } }
+                    ]
+                ) {
+                    userPrimaryData {
+                    response status name emailPhone uniqueId retoken occupation kycStatus
+                    }
+                }
+            }`;
+
+            const res = await fetch('/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uniqueId })
+            });
+
+            const data = await res.json();
+            console.log('Delete response:', data);
+
+            // Optionally refresh table
+            if (data.success) {
+            users = users.filter(u => u.uniqueId !== uniqueId);
+            updateTable();
+            }
+        } catch (err) {
+            console.error('Delete failed:', err);
+        }
+    }
+
+
+    function escapeHtml(s='') {
+      return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function escapeGraphQLString(str = '') {
+        return str
+            .replace(/\\/g, '\\\\')  // Escape backslashes
+            .replace(/"/g, '\\"')    // Escape double quotes
+            .replace(/\n/g, '\\n')   // Replace newlines with literal \n
+            .replace(/\s*\n\s*/g, '')
+            .trim();                 // Optionally trim leading/trailing spaces
+    }
+
+  </script>
+</body>
+</html>

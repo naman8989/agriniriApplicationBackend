@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Layout Builder Drag & Drop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    body { background: #f5f7fa; }
+    .layout-box {
+      background: #fff;
+      border: 2px solid #007bff;
+      border-radius: 10px;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+    }
+    .layout-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      color: #007bff;
+      cursor: grab;
+    }
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 3px 8px;
+      cursor: pointer;
+    }
+    .item-box {
+      background: #e9f5ff;
+      padding: 5px 8px;
+      border-radius: 5px;
+      margin: 5px 0;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: grab;
+    }
+    .builder-form { 
+      background: #fff; 
+      padding: 15px; 
+      border-radius: 10px; 
+      margin-bottom: 20px; 
+      border: 2px solid #007bff; 
+    }
+  </style>
+</head>
+<body class="p-4">
+  <!-- Shared Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="#">Product Manager</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="adminHomeSchema">🏠 Home Schema</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="addProduct">➕ Add Product</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  <div class="container">
+    <h2 class="text-center mb-4">🏗️ Homepage Layout Builder</h2>
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <h5>🧩 Select Builder</h5>
+        <button class="btn btn-primary mb-2 w-100" onclick="showForm('carouselBanners')">Carousel Banner</button>
+        <button class="btn btn-success mb-2 w-100" onclick="showForm('banners')">Banner</button>
+        <button class="btn btn-warning mb-2 w-100" onclick="showForm('iconSlideshow')">Icon Slideshow</button>
+        <button class="btn btn-info mb-2 w-100" onclick="showForm('gridList')">Grid List</button>
+      </div>
+      <div class="col-md-8">
+        <h5>⚙️ Builder Form</h5>
+        <div id="builderForm" class="builder-form"><p class="text-muted">Select a builder to show form.</p></div>
+      </div>
+    </div>
+    <h5>📄 Current Layout</h5>
+    <div id="layoutArea" class="mb-3" style="min-height: 150px;">
+      <p class="text-muted text-center" id="emptyText">No sections added yet.</p>
+    </div>
+    <button class="btn btn-dark mb-3" onclick="saveLayout()">💾 Save Layout</button>
+    <pre id="output" class="bg-light p-2 rounded"></pre>
+  </div>
+
+  <script>
+    let layout = [];
+    let currentBuilderType = null;
+
+    // Initialize SortableJS on sections
+    const sectionSortable = new Sortable(document.getElementById('layoutArea'), {
+      animation: 150,
+      handle: '.layout-header',
+      onEnd: function() {
+        const layoutArea = document.getElementById('layoutArea');
+        const newLayout = [];
+        layoutArea.querySelectorAll('.layout-box').forEach(box => {
+          const sec = layout.find(s => s.id === box.id);
+          if (sec) newLayout.push(sec);
+        });
+        layout = newLayout;
+      }
+    });
+
+    function showForm(type) {
+      currentBuilderType = type;
+      const form = document.getElementById("builderForm");
+      form.innerHTML = "";
+      if(type==='carouselBanners' || type==='banners'){
+        form.innerHTML = `
+          <input class="form-control mb-2" placeholder="Text">
+          <input type="color" class="form-control mb-2" placeholder="Color" value="#81C784">
+          <input class="form-control mb-2" type="number" placeholder="Height">
+          <button class="btn btn-primary" onclick="addItem()">Add Item</button>
+        `;
+      } else if(type==='iconSlideshow'){
+        // Example small icon list; you can expand this list
+        const iconOptions = `
+          <option value="0xe3af,Icons.home">home (0xe3af)</option>
+          <option value="0xe87c,Icons.favorite">favorite (0xe87c)</option>
+          <option value="0xe0be,Icons.shopping_cart">shopping_cart (0xe0be)</option>
+          <option value="0xe55f,Icons.settings">settings (0xe55f)</option>
+        `;
+        form.innerHTML = `
+          <input class="form-control mb-2" placeholder="Label">
+          <select class="form-control mb-2" id="iconSelect">
+            <option value="">-- Select Icon --</option>
+            ${iconOptions}
+          </select>
+          <button class="btn btn-primary" onclick="addItem()">Add Icon</button>
+        `;
+      } else if(type==='gridList'){
+        form.innerHTML = `
+          <input class="form-control mb-2" placeholder="Title">
+          <input class="form-control mb-2" type="number" placeholder="Count">
+          <input class="form-control mb-2" type="number" placeholder="CrossAxisCount">
+          <button class="btn btn-primary" onclick="addGrid()">Add Grid</button>
+        `;
+      }
+    }
+
+    function addItem(){
+      const inputs = document.querySelectorAll("#builderForm input, #builderForm select");
+      const sectionId = currentBuilderType + "_section";
+      let section = layout.find(s => s.id === sectionId);
+      if(!section){
+        section = { id: sectionId, type: currentBuilderType, items: [] };
+        layout.push(section);
+        renderSection(section);
+      }
+      const itemId = Date.now();
+      let item = {};
+      if(currentBuilderType==='carouselBanners' || currentBuilderType==='banners'){
+        const text = inputs[0].value;
+        const hexColor = inputs[1].value;         // e.g. "#81C784"
+        const heightVal = parseFloat(inputs[2].value);
+        // convert hex color to integer preserving alpha FF
+        const colourInt = parseInt("0xFF" + hexColor.substring(1));
+        item = { itemId, text: text, color: colourInt, height: heightVal };
+      } else if(currentBuilderType==='iconSlideshow'){
+        const label = inputs[0].value;
+        const sel = document.getElementById("iconSelect");
+        const val = sel.value;
+        if(!val){
+          alert("Please select an icon");
+          return;
+        }
+        // val format: "0xe3af,Icons.home"
+        const parts = val.split(",");
+        const codePoint = parseInt(parts[0], 16);
+        const fontFamily = "MaterialIcons";  // or whatever you're using in Flutter
+        item = { itemId, label: label, codePoint: codePoint, fontFamily: fontFamily };
+      }
+      section.items.push(item);
+      renderItems(section);
+      inputs.forEach(i => {
+        if(i.tagName.toLowerCase()==="input") i.value = "";
+        if(i.tagName.toLowerCase()==="select") i.selectedIndex = 0;
+      });
+    }
+
+    function addGrid(){
+      const inputs = document.querySelectorAll("#builderForm input");
+      const sectionId = currentBuilderType + "_section";
+      let section = layout.find(s => s.id === sectionId);
+      if(!section){
+        section = { id: sectionId, type: currentBuilderType, items: [] };
+        layout.push(section);
+        renderSection(section);
+      }
+      const itemId = Date.now();
+      const title = inputs[0].value;
+      const count = parseInt(inputs[1].value);
+      const crossAxisCount = parseInt(inputs[2].value);
+      const gridObj = {
+        itemId,
+        title: title,
+        count: count,
+        crossAxisCount: crossAxisCount,
+        items: Array(count).fill({ page: "ProductDescriptionPage", type: "popular" })
+      };
+      section.items.push(gridObj);
+      renderItems(section);
+      inputs.forEach(i=>i.value="");
+    }
+
+    function renderSection(section){
+      const layoutArea = document.getElementById("layoutArea");
+      document.getElementById("emptyText").style.display = "none";
+      if(document.getElementById(section.id)) return; // already rendered
+      const div = document.createElement("div");
+      div.className = "layout-box";
+      div.id = section.id;
+      div.innerHTML = `
+        <div class="layout-header">
+          <span>${getLabel(section.type)}</span>
+          <button class="delete-btn" onclick="deleteSection('${section.id}')">Delete Section</button>
+        </div>
+        <div class="items-container mt-2"></div>
+      `;
+      layoutArea.appendChild(div);
+    }
+
+    function renderItems(section){
+      const container = document.querySelector(`#${section.id} .items-container`);
+      container.innerHTML = "";
+      section.items.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "item-box";
+        div.id = `item_${item.itemId}`;
+        div.innerHTML = `
+          <span>${JSON.stringify(item)}</span>
+          <button class="delete-btn" onclick="deleteItem('${section.id}',${item.itemId})">×</button>
+        `;
+        container.appendChild(div);
+      });
+      makeItemsSortable(section.id);
+    }
+
+    function makeItemsSortable(sectionId){
+      const container = document.querySelector(`#${sectionId} .items-container`);
+      new Sortable(container, {
+        animation: 100,
+        handle: '.item-box span',
+        onEnd: function(){
+          const section = layout.find(s => s.id === sectionId);
+          if(!section) return;
+          const newItems = [];
+          container.querySelectorAll('.item-box').forEach(div => {
+            const itemId = parseInt(div.id.replace('item_',''));
+            const item = section.items.find(it => it.itemId === itemId);
+            if(item) newItems.push(item);
+          });
+          section.items = newItems;
+        }
+      });
+    }
+
+    function deleteItem(sectionId, itemId){
+      const section = layout.find(s => s.id === sectionId);
+      if(!section) return;
+      section.items = section.items.filter(it => it.itemId !== itemId);
+      renderItems(section);
+    }
+
+    function deleteSection(id){
+      layout = layout.filter(s => s.id !== id);
+      document.getElementById(id)?.remove();
+      if(layout.length === 0) document.getElementById("emptyText").style.display = "block";
+    }
+
+    function getLabel(type){
+      switch(type){
+        case "carouselBanners": return "🌀 Carousel Banner";
+        case "banners": return "🏷️ Banner";
+        case "iconSlideshow": return "🎞️ Icon Slideshow";
+        case "gridList": return "🔳 Grid List";
+        default: return type;
+      }
+    }
+
+    function saveLayout(){
+      const jsonLayout = {};
+      layout.forEach(section => {
+        jsonLayout[section.type] = section.items.map(i => i);
+      });
+      document.getElementById("output").textContent = JSON.stringify(jsonLayout, null, 2);
+      // Example fetch: uncomment and adapt to your backend
+      /*
+      fetch('/adminHomeSchema', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schema: jsonLayout })
+      })
+      .then(res => res.json())
+      .then(data => console.log("Saved:", data))
+      .catch(err => console.error("Error saving:", err));
+      */
+    }
+  </script>
+</body>
+</html>

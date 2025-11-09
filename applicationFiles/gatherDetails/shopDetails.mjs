@@ -19,6 +19,7 @@ export async function createShopDetails(jsonData){
         // Extract fields from jsonData
         const fields = [
             'uniqueId',
+            'shopkeeperName',
             'phoneNumber',
             'shopName',
             'panOwnerName',
@@ -31,7 +32,6 @@ export async function createShopDetails(jsonData){
             'deliveryTime',
             'gst',
             'referralCode',
-            'shopkeeperName'
         ];
 
         const values = fields.map(field => jsonData[field]);

@@ -92,34 +92,28 @@ export default class dbInstance {
     }
 
     updateUsers(condition, settings) {
-        // settings should be an array of [column, value] pairs
         const setQuery = settings.map(([field]) => `${field} = ?`).join(', ');
-    
-        // Condition should be [column, value]
         const query = `UPDATE ${this.tableName} SET ${setQuery} WHERE ${condition[0]} = ?`;
-        
-        return new Promise((resolve,rejects)=>{
 
+        return new Promise((resolve, reject) => {
             this.db.serialize(() => {
-                // Prepare the SQL statement
-                const stmt = this.db.prepare(query);
-        
-                // Extract values for the placeholders
-                const values = [...settings.map(([_, val]) => val), condition[1]];
-        
-                // Run the query with values
-                stmt.run(values, function (err) {
-                    if (err) {
-                        console.error('Error updating data:', err);
-                    } else {
-                        console.log('Data updated successfully');
-                    }
-                    stmt.finalize();
-                });
+            const stmt = this.db.prepare(query);
+            const values = [...settings.map(([_, val]) => val), condition[1]];
+
+            stmt.run(values, function (err) {
+                if (err) {
+                console.error('Error updating data:', err);
+                reject(err);
+                } else {
+                console.log('Data updated successfully');
+                resolve({ changes: this.changes });
+                }
+                stmt.finalize();
             });
-        })
-        
+            });
+        });
     }
+
     
 
     // Function to get all users
