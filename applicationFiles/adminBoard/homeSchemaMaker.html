@@ -6,6 +6,7 @@
   <title>Layout Builder Drag & Drop</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
   <style>
     body { background: #f5f7fa; }
     .layout-box {
@@ -31,6 +32,7 @@
       padding: 3px 8px;
       cursor: pointer;
     }
+    
     .item-box {
       background: #e9f5ff;
       padding: 5px 8px;
@@ -41,7 +43,11 @@
       justify-content: space-between;
       align-items: center;
       cursor: grab;
+      overflow: hidden;       /* <-- Add this line */
+      text-overflow: ellipsis; /* Optional visual polish */
     }
+
+
     .builder-form { 
       background: #fff; 
       padding: 15px; 
@@ -51,7 +57,7 @@
     }
   </style>
 </head>
-<body class="p-4">
+<body class="p-4" onload="loadLayout()">
   <!-- Shared Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
   <div class="container-fluid">
@@ -92,15 +98,33 @@
     <div id="layoutArea" class="mb-3" style="min-height: 150px;">
       <p class="text-muted text-center" id="emptyText">No sections added yet.</p>
     </div>
-    <button class="btn btn-dark mb-3" onclick="saveLayout()">💾 Save Layout</button>
+    <button class="btn btn-secondary mb-2" onclick="loadLayout()">📥 Load Data</button>
+    <button class="btn btn-dark mb-3" onclick="updateLayout()">💾 Update Layout</button>
     <pre id="output" class="bg-light p-2 rounded"></pre>
   </div>
+  <!-- Product Selection Modal -->
+  <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Select Product(s)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="productList" style="max-height: 60vh; overflow-y: auto;">
+          <p class="text-muted text-center">Loading products...</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="confirmSelectionBtn">Confirm Selection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <script>
     let layout = [];
     let currentBuilderType = null;
 
-    // Initialize SortableJS on sections
     const sectionSortable = new Sortable(document.getElementById('layoutArea'), {
       animation: 150,
       handle: '.layout-header',
@@ -124,10 +148,10 @@
           <input class="form-control mb-2" placeholder="Text">
           <input type="color" class="form-control mb-2" placeholder="Color" value="#81C784">
           <input class="form-control mb-2" type="number" placeholder="Height">
+          <input class="form-control mb-2" type="file" accept="image/*" id="imageInput">
           <button class="btn btn-primary" onclick="addItem()">Add Item</button>
         `;
       } else if(type==='iconSlideshow'){
-        // Example small icon list; you can expand this list
         const iconOptions = `
           <option value="0xe3af,Icons.home">home (0xe3af)</option>
           <option value="0xe87c,Icons.favorite">favorite (0xe87c)</option>
@@ -147,12 +171,26 @@
           <input class="form-control mb-2" placeholder="Title">
           <input class="form-control mb-2" type="number" placeholder="Count">
           <input class="form-control mb-2" type="number" placeholder="CrossAxisCount">
-          <button class="btn btn-primary" onclick="addGrid()">Add Grid</button>
+          <button class="btn btn-primary mb-2" onclick="addGrid()">Add Grid</button>
+          <button class="btn btn-success" onclick="getProduct()">Get Product</button>
         `;
       }
     }
 
-    function addItem(){
+    async function imageToBlob(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const arrayBuffer = reader.result;
+          const bytes = new Uint8Array(arrayBuffer);
+          resolve(Array.from(bytes));
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function addItem(){
       const inputs = document.querySelectorAll("#builderForm input, #builderForm select");
       const sectionId = currentBuilderType + "_section";
       let section = layout.find(s => s.id === sectionId);
@@ -161,15 +199,20 @@
         layout.push(section);
         renderSection(section);
       }
+
       const itemId = Date.now();
       let item = {};
       if(currentBuilderType==='carouselBanners' || currentBuilderType==='banners'){
         const text = inputs[0].value;
-        const hexColor = inputs[1].value;         // e.g. "#81C784"
+        const hexColor = inputs[1].value;
         const heightVal = parseFloat(inputs[2].value);
-        // convert hex color to integer preserving alpha FF
+        const imageFile = document.getElementById('imageInput').files[0];
+        let imageBlob = null;
+        if(imageFile) {
+          imageBlob = await imageToBlob(imageFile);
+        }
         const colourInt = parseInt("0xFF" + hexColor.substring(1));
-        item = { itemId, text: text, color: colourInt, height: heightVal };
+        item = { itemId, text: text, color: colourInt, height: heightVal, imageBlob: imageBlob };
       } else if(currentBuilderType==='iconSlideshow'){
         const label = inputs[0].value;
         const sel = document.getElementById("iconSelect");
@@ -178,10 +221,9 @@
           alert("Please select an icon");
           return;
         }
-        // val format: "0xe3af,Icons.home"
         const parts = val.split(",");
         const codePoint = parseInt(parts[0], 16);
-        const fontFamily = "MaterialIcons";  // or whatever you're using in Flutter
+        const fontFamily = "MaterialIcons";
         item = { itemId, label: label, codePoint: codePoint, fontFamily: fontFamily };
       }
       section.items.push(item);
@@ -196,31 +238,131 @@
       const inputs = document.querySelectorAll("#builderForm input");
       const sectionId = currentBuilderType + "_section";
       let section = layout.find(s => s.id === sectionId);
+
       if(!section){
         section = { id: sectionId, type: currentBuilderType, items: [] };
         layout.push(section);
         renderSection(section);
       }
+
+      if(tempSelectedProducts.length === 0){
+        alert("Please select at least one product!");
+        return;
+      }
+
       const itemId = Date.now();
-      const title = inputs[0].value;
-      const count = parseInt(inputs[1].value);
-      const crossAxisCount = parseInt(inputs[2].value);
+      const title = inputs[0].value || "Grid Section"; // keep title optional
+      const crossAxisCount = parseInt(inputs[1].value) || 2; // default if left empty
+
+      // Each selected product becomes its own grid item
+      const gridItems = tempSelectedProducts.map(p => ({
+        itemId: Date.now() + Math.floor(Math.random() * 1000), // unique id
+        productName: p.productName || "Unnamed Product",
+        productQuantityAvaliable: p.productQuantityAvaliable || 0,
+        productImage: p.productImage || null,
+        type: "selectedProduct"
+      }));
+
       const gridObj = {
         itemId,
-        title: title,
-        count: count,
-        crossAxisCount: crossAxisCount,
-        items: Array(count).fill({ page: "ProductDescriptionPage", type: "popular" })
+        title,
+        crossAxisCount,
+        items: gridItems
       };
+
       section.items.push(gridObj);
       renderItems(section);
-      inputs.forEach(i=>i.value="");
+
+      // Clear inputs & temp products
+      inputs.forEach(i => i.value = "");
+      tempSelectedProducts = [];
+      const previewDiv = document.getElementById("selectedProductsPreview");
+      if(previewDiv) previewDiv.remove();
     }
+
+
+    async function getProduct() {
+      try {
+        const res = await fetch('/graphql-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `mutation {
+              operateAllUserData(operation: "read", input: [{ userProductInfo: { live: "yes" } }]) {
+                userProductInfo {
+                  farmerUniqueId productId productName productPrice productDesc
+                  productRating locationDetail productImage productQuantityAvaliable
+                  productQuantityUsed minOrderReq MultipleOrderRequest live response status
+                }
+              }
+            }`
+          })
+        });
+
+        const json = await res.json();
+        const products = json?.data?.operateAllUserData?.[0]?.userProductInfo || [];
+
+        if (!products.length) {
+          alert("No live products found!");
+          return;
+        }
+
+        showProductPopup(products);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        alert("Failed to fetch products!");
+      }
+    }
+
+    function showProductPopup(products) {
+      const listDiv = document.getElementById("productList");
+      listDiv.innerHTML = "";
+
+      products.forEach((p, index) => {
+        let imgSrc = "https://via.placeholder.com/80x80?text=No+Image";
+        if (Array.isArray(p.productImage)) {
+          const blob = new Blob([new Uint8Array(p.productImage)], { type: "image/jpeg" });
+          imgSrc = URL.createObjectURL(blob);
+        }
+
+        const card = document.createElement("div");
+        card.className = "d-flex align-items-center border rounded p-2 mb-2";
+        card.innerHTML = `
+          <input type="checkbox" class="form-check-input me-3 product-select" data-index="${index}">
+          <img src="${imgSrc}" width="80" height="80" class="rounded me-3" style="object-fit:cover;">
+          <div style="flex:1;">
+            <b>${p.productName || "Unnamed Product"}</b><br>
+            <small class="text-muted">Available: ${p.productQuantityAvaliable || 0}</small>
+          </div>
+        `;
+        listDiv.appendChild(card);
+      });
+
+      const modal = new bootstrap.Modal(document.getElementById("productModal"));
+      modal.show();
+
+      document.getElementById("confirmSelectionBtn").onclick = function () {
+        const selectedIndexes = [...document.querySelectorAll(".product-select:checked")].map(
+          cb => parseInt(cb.dataset.index)
+        );
+        tempSelectedProducts = selectedIndexes.map(i => products[i]);
+        modal.hide();
+
+        // Show selected products in the builder form
+        const form = document.getElementById("builderForm");
+        const preview = document.createElement("div");
+        preview.id = "selectedProductsPreview";
+        preview.innerHTML = tempSelectedProducts.map(p => `<div>${p.productName}</div>`).join("");
+        form.appendChild(preview);
+      };
+    }
+
+
 
     function renderSection(section){
       const layoutArea = document.getElementById("layoutArea");
       document.getElementById("emptyText").style.display = "none";
-      if(document.getElementById(section.id)) return; // already rendered
+      if(document.getElementById(section.id)) return;
       const div = document.createElement("div");
       div.className = "layout-box";
       div.id = section.id;
@@ -234,21 +376,55 @@
       layoutArea.appendChild(div);
     }
 
-    function renderItems(section){
+    function renderItems(section) {
       const container = document.querySelector(`#${section.id} .items-container`);
       container.innerHTML = "";
+
       section.items.forEach(item => {
         const div = document.createElement("div");
         div.className = "item-box";
         div.id = `item_${item.itemId}`;
+
+        let previewHTML = "";
+        if(item.items && Array.isArray(item.items)){ 
+          // If grid section with selected products
+          previewHTML = item.items.map(p => {
+            let imgSrc = "https://via.placeholder.com/50x50?text=No+Image";
+            if (Array.isArray(p.productImage)) {
+              const blob = new Blob([new Uint8Array(p.productImage)], { type: "image/jpeg" });
+              imgSrc = URL.createObjectURL(blob);
+            }
+            return `<div style="display:flex; align-items:center; gap:5px; margin-bottom:3px;">
+                      <img src="${imgSrc}" width="50" height="50" style="object-fit:cover; border-radius:5px;">
+                      <div>
+                        <b>${p.productName}</b><br>
+                        <small class="text-muted">Qty: ${p.productQuantityAvaliable}</small>
+                      </div>
+                    </div>`;
+          }).join("");
+        } else {
+          // Single banner/item
+          if (item.imageBlob && Array.isArray(item.imageBlob)) {
+            const blob = new Blob([new Uint8Array(item.imageBlob)], { type: 'image/jpeg' });
+            const imgURL = URL.createObjectURL(blob);
+            previewHTML = `<img src="${imgURL}" style="max-height:60px; max-width:80px; object-fit:cover; border-radius:5px; margin-right:8px;">`;
+          }
+        }
+
         div.innerHTML = `
-          <span>${JSON.stringify(item)}</span>
-          <button class="delete-btn" onclick="deleteItem('${section.id}',${item.itemId})">×</button>
+          <div style="display:flex; flex-direction:column;">
+            <b>${item.title || item.text || item.label || "Item"}</b>
+            <div>${previewHTML}</div>
+          </div>
+          <button class="delete-btn" onclick="deleteItem('${section.id}', ${item.itemId})">×</button>
         `;
+
         container.appendChild(div);
       });
+
       makeItemsSortable(section.id);
     }
+
 
     function makeItemsSortable(sectionId){
       const container = document.querySelector(`#${sectionId} .items-container`);
@@ -292,24 +468,105 @@
       }
     }
 
-    function saveLayout(){
+    async function updateLayout() {
+      // Clone layout safely
       const jsonLayout = {};
-      layout.forEach(section => {
-        jsonLayout[section.type] = section.items.map(i => i);
-      });
+
+      for (const section of layout) {
+        jsonLayout[section.type] = await Promise.all(section.items.map(async i => {
+          const item = { ...i };
+          if (item.imageBlob && Array.isArray(item.imageBlob)) {
+            const blob = new Blob([new Uint8Array(item.imageBlob)], { type: 'image/jpeg' });
+            const base64 = await blobToBase64(blob);
+            item.imageBase64 = base64; // add new field
+            delete item.imageBlob; // remove large array
+          }
+          return item;
+        }));
+      }
+
       document.getElementById("output").textContent = JSON.stringify(jsonLayout, null, 2);
-      // Example fetch: uncomment and adapt to your backend
-      /*
+
       fetch('/adminHomeSchema', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ schema: jsonLayout })
       })
       .then(res => res.json())
-      .then(data => console.log("Saved:", data))
-      .catch(err => console.error("Error saving:", err));
-      */
+      .then(data => alert("Layout updated successfully! "+ JSON.stringify(data['schema'])))
+      .catch(err => console.error("Error updating layout:", err));
     }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function base64ToBlob(base64, mimeType = "image/jpeg") {
+      const byteChars = atob(base64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) {
+        byteNumbers[i] = byteChars.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      return new Blob([byteArray], { type: mimeType });
+    }
+
+
+
+    async function loadLayout() {
+      fetch('/adminHomeSchema', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      })
+      .then(res => res.json())
+      .then(async data => {
+        console.log("Loaded layout data:", data);
+
+        const layoutArea = document.getElementById("layoutArea");
+        layoutArea.innerHTML = '<p class="text-muted text-center" id="emptyText">No sections added yet.</p>';
+        document.getElementById("emptyText").style.display = "none";
+
+        layout = [];
+
+        for (const type of Object.keys(data)) {
+          const sectionId = type + "_section";
+
+          // Convert Base64 back to Blob
+          for (const item of data[type]) {
+            if (item.imageBase64) {
+              try {
+                const blob = base64ToBlob(item.imageBase64);
+                const buffer = await blob.arrayBuffer();
+                item.imageBlob = Array.from(new Uint8Array(buffer));
+                delete item.imageBase64;
+              } catch (err) {
+                console.error("Error converting base64 to blob:", err);
+              }
+            }
+          }
+
+          const section = { id: sectionId, type: type, items: data[type] };
+          layout.push(section);
+          renderSection(section);
+          renderItems(section);
+        }
+
+        if (layout.length === 0) {
+          document.getElementById("emptyText").style.display = "block";
+        }
+      })
+      .catch(err => console.error("Error loading layout:", err));
+    }
+
+  
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

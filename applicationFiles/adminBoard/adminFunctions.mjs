@@ -27,7 +27,7 @@ export async function saveHomeSchema(req, res) {
         const docs = await adminData.findData({ schema: { $exists: true } });
 
         res.status(200)
-        res.end("ok");
+        res.json({"schema":"schema updated"});
     }catch(e){
         res.status(400)
         res.json({"schema":"schema not updated \n "+e}) 

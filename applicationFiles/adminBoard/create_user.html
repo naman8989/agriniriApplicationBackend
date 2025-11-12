@@ -287,9 +287,10 @@
         });
         const payload = await res.json();
         const result = payload?.data?.operateAllUserData?.[0]?.userPrimaryData;
-        if (result?.response) {
-          showFlash(result.response, 'success', 2500);
-        } else showFlash(result?.response || 'Unknown error');
+        // console.log(result)
+        if (result[0].response) {
+          showFlash(result[0].response, 'success', 2500);
+        } else showFlash(result[0].response || 'Unknown error');
       } catch (err) {
         console.error(err);
         showFlash('Error connecting to server');

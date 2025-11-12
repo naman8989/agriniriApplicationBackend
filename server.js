@@ -16,10 +16,10 @@ const upload = multer();
 
 
 // Middleware to handle request and response
-app.use(express.json()); // To handle JSON payloads in POST requests
+app.use(express.json({ limit: '50mb' })); // To handle JSON payloads in POST requests
 // app.use(express.text()); // To handle JSON payloads in POST requests
 // app.use(express.raw()); // To handle JSON payloads in POST requests
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // app.use(upload.none());
 // app.use(bodyParser.json());
 

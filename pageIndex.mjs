@@ -182,11 +182,12 @@ export async function Pages(req, res) {
                 // res.end()
             }
             if(req.method == 'POST'){
-                console.log(req.body)
-                console.log(Object.keys(req.body.schema).length)
-                if(Object.keys(req.body.schema).length == 0){
+                // console.log(req.body)
+                // console.log(Object.keys(req.body.schema).length)
+                if(req.body.schema == undefined){
                     getHomeSchema(req,res)
                 }else{
+                    // console.log("in here save layout")
                     saveHomeSchema(req,res)
                 }
             }

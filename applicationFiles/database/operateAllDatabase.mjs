@@ -25,6 +25,10 @@ export async function getUser(jsonData) {
         }
         // console.log(" in here ",jsonData['searchPoint'],jsonData[sp],currentUserData[1][0]['hashedPassword'])
         currentUserData[1].forEach(element => {
+            if ('hashedPassword' in element) {
+                element['hashPassword'] = element['hashedPassword'];
+                delete element['hashedPassword'];  // remove the old key
+            }
             element['status'] = 200
             element['response'] = "Got the data"
         });
@@ -40,6 +44,7 @@ export async function getUser(jsonData) {
         // userInfo[0]['retoken'] = currentUserData[1][0]['retoken']
         // userInfo[0]['occupation'] = currentUserData[1][0]['occupation']
         // userInfo[0]['kycStatus'] = currentUserData[1][0]['kycStatus']
+        // console.log(currentUserData[1])
         return currentUserData[1]
         // return userInfo
     
@@ -73,11 +78,13 @@ export async function updateUser(jsonData) {
             userInfo[0]['response'] = "Update data not Present"
             return userInfo
         }
-        console.log('in here')
-        console.log(jsonData['searchPoint'],jsonData['updatePoint'],jsonData['updateData'])
+        // console.log('in here')
+        // console.log(jsonData['searchPoint'],jsonData['updatePoint'],jsonData['updateData'])
+        // console.log(jsonData)
         // let sp = jsonData['searchPoint']
 
         let currentUserData =  await userData.findInColumn(jsonData['searchPoint'],jsonData['searchValue'])
+        console.log(currentUserData)    
         // console.log(currentUserData[1].length)
         if(currentUserData[1].length <= 0){
             userInfo[0]['status'] = 400
@@ -93,6 +100,9 @@ export async function updateUser(jsonData) {
 
         userInfo[0]['status'] = 200
         userInfo[0]['response'] = "Updated!"
+
+        // console.log("in here 1")
+        // console.log(userInfo)
 
         return userInfo
 
@@ -213,16 +223,31 @@ export async function updateShopkeeperDetails(jsonData){
 
 const productInfoDatabase = new dbInstance('productDetails');
 export async function getProductInfo(jsonData){
+    // console.log(jsonData['live'])
     
     let userInfo = [{ status: 400, response: "uniqueId not Present" }]
     try{
         
-        if(jsonData['productId'] == null){
-            userInfo[0]['response'] = "uniqueId not Present"
+        // console.log(" in product function ",jsonData)
+        if(jsonData['productId'] == null && jsonData['farmerUniqueId']==null && jsonData['live'] ==null){
+            userInfo[0]['response'] = "productId, farmerId and live status  not Present"
             return userInfo
         }
+        
+        let currentProductInfo = {}
+        
+        if(jsonData['productId'] != null ){
+            currentProductInfo = await productInfoDatabase.findInColumn("productId",jsonData['productId'])
+        }
+        if(jsonData['farmerUniqueId'] != null ){
+            currentProductInfo = await productInfoDatabase.findInColumn("farmerUniqueId",jsonData['farmerUniqueId'])
+        }
+        if(jsonData['live'] != null ){
+            // console.log(" in live ")
+            currentProductInfo = await productInfoDatabase.findInColumn("live",jsonData['live'])
+        }
 
-        let currentProductInfo = await productInfoDatabase.findInColumn("productId",jsonData['productId'])
+        // console.log(currentProductInfo)
         if(currentProductInfo[1].length <= 0){
             userInfo[0]['status'] = 400
             userInfo[0]['response'] = 'Account not found. Kyc status might be 0. '

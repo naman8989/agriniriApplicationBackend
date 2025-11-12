@@ -80,6 +80,7 @@ export const resolvers = {
             }
             
             if(element.userProductInfo){
+              console.log(" in here product")
               result.userProductInfo = await getProductInfo(element.userProductInfo)
             }
 
